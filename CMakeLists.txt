@@ -6,6 +6,7 @@ enable_testing()
 
 include_directories("C:/cppLibraries/glfw-3.3.8.bin.WIN64/include/GLFW")
 include_directories("C:/cppLibraries/glad/include")
+include_directories("C:/cppLibraries/glm/glm")
 
 add_executable(render 
 main.cpp

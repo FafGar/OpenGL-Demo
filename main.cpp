@@ -1,6 +1,9 @@
 #include <iostream>
 #include <glad/glad.h>
 #include <glfw3.h>
+#include <glm.hpp>
+#include <gtc/matrix_transform.hpp>
+#include <gtc/type_ptr.hpp>
 #include "shader.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height){ //NOTE: the fact that the ints are passed by value instead of reference is evidently important.
@@ -14,20 +17,20 @@ void userInput(GLFWwindow* window){
     if(glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 }
-const char* vertexShaderSource = "#version 460 core\n" // Apparently this is the simple/beginner way to write stuff in GLSL. It has to be compiled at runtime
-    "layout (location = 0) in vec3 aPos;\n"
-    "void main(){\n"
-    "gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);}\0";
+// const char* vertexShaderSource = "#version 460 core\n" // Apparently this is the simple/beginner way to write stuff in GLSL. It has to be compiled at runtime
+//     "layout (location = 0) in vec3 aPos;\n"
+//     "void main(){\n"
+//     "gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);}\0";
 
-const char* fragShaderSource = "#version 460 core\n"
-"out vec4 FragColor;\n"
-"void main()\n"
-"{FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);}\0";
+// const char* fragShaderSource = "#version 460 core\n"
+// "out vec4 FragColor;\n"
+// "void main()\n"
+// "{FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);}\0";
 
-const char* fragShaderSource1 = "#version 460 core\n"
-"out vec4 FragColor;\n"
-"void main()\n"
-"{FragColor = vec4(0.0f, 0.5f, 1.f, 1.0f);}\0";
+// const char* fragShaderSource1 = "#version 460 core\n"
+// "out vec4 FragColor;\n"
+// "void main()\n"
+// "{FragColor = vec4(0.0f, 0.5f, 1.f, 1.0f);}\0";
 
 int main() {
 
@@ -54,14 +57,49 @@ int main() {
     glClearColor(0.808f, .09f, 0.7f, 1.0f); // Sets color to clear the screen to when necessary. This produces a nice red, it is unclear what the last number does
 
 
-    float vertices[] = { //vertices of sample rectangle, already in transformed coordinates.
-         0.5f,  0.5f, 0.0f,  // top right
-         0.5f, -0.5f, 0.0f,  // bottom right
-        -0.5f, -0.5f, 0.0f,  // bottom left
-        -0.5f,  0.5f, 0.0f,   // top left
+    float vertices[] = {
+        -0.5f, -0.5f, -0.5f,  
+        0.5f, -0.5f, -0.5f,
+        0.5f,  0.5f, -0.5f, 
+        0.5f,  0.5f, -0.5f, 
+        -0.5f,  0.5f, -0.5f,  
+        -0.5f, -0.5f, -0.5f,
 
-        0.f, 0.75f, 0.f     //Rooftop point
-    };  
+        -0.5f, -0.5f,  0.5f, 
+        0.5f, -0.5f,  0.5f, 
+        0.5f,  0.5f,  0.5f, 
+        0.5f,  0.5f,  0.5f,  
+        -0.5f,  0.5f,  0.5f,  
+        -0.5f, -0.5f,  0.5f,  
+
+        -0.5f,  0.5f,  0.5f,  
+        -0.5f,  0.5f, -0.5f,  
+        -0.5f, -0.5f, -0.5f, 
+        -0.5f, -0.5f, -0.5f, 
+        -0.5f, -0.5f,  0.5f, 
+        -0.5f,  0.5f,  0.5f,
+
+        0.5f,  0.5f,  0.5f,
+        0.5f,  0.5f, -0.5f, 
+        0.5f, -0.5f, -0.5f,
+        0.5f, -0.5f, -0.5f,
+        0.5f, -0.5f,  0.5f,
+        0.5f,  0.5f,  0.5f, 
+
+        -0.5f, -0.5f, -0.5f, 
+        0.5f, -0.5f, -0.5f, 
+        0.5f, -0.5f,  0.5f, 
+        0.5f, -0.5f,  0.5f, 
+        -0.5f, -0.5f,  0.5f,
+        -0.5f, -0.5f, -0.5f, 
+
+        -0.5f,  0.5f, -0.5f,
+        0.5f,  0.5f, -0.5f, 
+        0.5f,  0.5f,  0.5f, 
+        0.5f,  0.5f,  0.5f, 
+        -0.5f,  0.5f,  0.5f,
+        -0.5f,  0.5f, -0.5f,
+    };
 
     unsigned int indices[] = { //orders of indices of vertexes (That makes sense, right?) to draw in order to form a rectangle without excess vertex definitions
         0, 1, 3,   // first triangle
@@ -83,8 +121,8 @@ int main() {
     glGenBuffers(1, &VBO); //an OpenGl object is created, the ID of which is assigned to VBO. The first number is # of ids to generate, so the second arg could/should be an array in other circumstances.
 
 
-    shader shader1("../genericVert.glsl", "../genericFrag.glsl");
-    shader shader2("../genericVert.glsl", "../genericFrag2.glsl");
+    shader shader1("shaders/genericVert.glsl", "shaders/genericFrag.glsl");
+    shader shader2("shaders/genericVert.glsl", "shaders/genericFrag2.glsl");
     
     unsigned int VAO;
     glGenVertexArrays(1,&VAO);// creating a Vertex Array Object the same way we created the Vertex Buffer Object.
@@ -111,32 +149,61 @@ int main() {
 
     glBindVertexArray(VAO1);
     
-    
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO1);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices2), indices2, GL_STATIC_DRAW);
-
-
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0); //evidently this and the next line must be specified for each Vertex Array Object.
     glEnableVertexAttribArray(0); 
 
+    glEnable(GL_DEPTH_TEST);
+
+
+    glm::mat4 model = glm::mat4(1.f);
+    model = glm::rotate(model,(float)glfwGetTime()*glm::radians(15.f), glm::vec3(.5f,1.f, 0.f));
+
+    glm::mat4 view = glm::mat4(1.f);
+    view = glm::translate(view,glm::vec3(0.f,0.f,-3.f));
+
+    glm::mat4 projection = glm::mat4(1.f);
+    projection = glm::perspective(glm::radians(45.f), 800.f/600.f, 0.1f, 100.f );
+
+    // int modelLocation = glGetUniformLocation(shader1.ID, "model");
+    // glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
+
+    // int viewLocation = glGetUniformLocation(shader1.ID, "view");
+    // glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
+
+    // int projectionLocation = glGetUniformLocation(shader1.ID, "projection");
+    // glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
+
 
     while(!glfwWindowShouldClose(window)){ //render loop        The function just checks if the window has been told to close or not
-        glClear(GL_COLOR_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
         userInput(window);
 
         // glUseProgram(shaderProg);
         shader1.use();
         glBindVertexArray(VAO);
 
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // draws triangles based on items in the currently bound element buffer. 
+
+        model = glm::rotate(model,glm::radians(0.5f), glm::vec3(.5f,1.f, 0.f));
+        int modelLocation = glGetUniformLocation(shader1.ID, "model");
+        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
+
+        int viewLocation = glGetUniformLocation(shader1.ID, "view");
+        glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
+
+        int projectionLocation = glGetUniformLocation(shader1.ID, "projection");
+        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
+
+        glDrawArrays(GL_TRIANGLES, 0, 36); // draws triangles based on items in the currently bound element buffer. 
         // 1: What to draw      2: how many elements(vertices here)     3: what data type the indices are       4: offset from start of index data
 
 
-        shader2.use();
-        glBindVertexArray(VAO1);
+        // shader2.use();
+        // glBindVertexArray(VAO1);
         
-        glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
+        // glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window); //swaps the color buffer(contains color values for every pixel)
         glfwPollEvents(); // checks for input events, updates window state and can call callback funcs.
