@@ -17,6 +17,7 @@ shader.h)
 target_link_directories(render PUBLIC "C:/cppLibraries/glfw-3.3.8.bin.WIN64/lib-mingw-w64")
 target_link_libraries(render glfw3)
 
+
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})
 include(CPack)
