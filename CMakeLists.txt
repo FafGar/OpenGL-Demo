@@ -13,8 +13,8 @@ add_executable(render
 main.cpp
 C:/cppLibraries/glad/src/glad.c
 shader.h
-FPScamera.h
-circleCamera.h)
+cameraUtils.h
+stb_image.h)
 
 
 target_link_directories(render PUBLIC "C:/cppLibraries/glfw-3.3.8.bin.WIN64/lib-mingw-w64")
