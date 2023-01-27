@@ -5,33 +5,29 @@
 #include <gtc/matrix_transform.hpp>
 #include <gtc/type_ptr.hpp>
 #include "shader.h"
+#include "cameraUtils.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height){ //NOTE: the fact that the ints are passed by value instead of reference is evidently important.
     glViewport(0,0, width, height); //setting window size for OpenGL. This is for coordinate reasons mostly. Note: can be set small than actual window if you want to have other things outside the OpenGL render viewport
 }
 
-
-//Camera Handling
-
-glm::vec3 cameraPos = glm::vec3(0.f,0.f,3.f); //camera starting location
-glm::vec3 cameraTarget = glm::vec3(0.f,0.f,0.f); //camera starts pointing here
-glm::vec3 cameraFront = glm::vec3(0.f,0.f,-4.f); 
-glm::vec3 cameraDirection = glm::normalize(cameraPos-cameraTarget); //Creating a positive z axis for the camera
-
+glm::vec3 cameraPos = glm::vec3(0.f,0.f,-3.f); //camera starting location
+glm::vec3 cameraFront = glm::vec3(0.f,0.f,1.f); //camera starts pointing here
 glm::vec3 upVec = glm::vec3(0.f, 1.f, 0.f); // world space up vector
-glm::vec3 cameraRight = glm::normalize(glm::cross(upVec, cameraDirection)); //create camera right vector from world up vector
 
-glm::vec3 cameraUp = glm::normalize(glm::cross(cameraDirection,cameraUp)); //create camera up vector from other camera vectors.\
+glm::vec3 cameraDirection;// positive z axis for the camera
+glm::vec3 cameraRight;//positive x vector for camera
+glm::vec3 cameraUp;//positive y vector for camera
 
-glm::mat4 view = glm::lookAt(cameraPos, cameraTarget, upVec);
-
-//mouse input handling for camera
 float cameraPitch = 0.f;
 float cameraYaw = -90.f;
 float lastX = 400;
 float lastY = 300;
-const float mouseSensitivity = 0.1;
+float mouseSensitivity = 0.1;
 bool mouseIn = true;
+
 void mouse_callback(GLFWwindow* window, double xPos, double yPos){
     if (mouseIn)
     {
@@ -51,18 +47,18 @@ void mouse_callback(GLFWwindow* window, double xPos, double yPos){
     cameraPitch += yOffset;
     cameraYaw += xOffset; 
 
-    if(cameraPitch > 89.0f) ////NOTE: SOMETHING IS NOT LETTING THE CAMERA TURN IN A HORIZONTAL CIRCLE. IT SEEMS TO LOOP BACK FOR SOME REASON
+    if(cameraPitch > 89.0f)
         cameraPitch = 89.0f;
     if(cameraPitch < -89.0f)
         cameraPitch = -89.0f;
 
-    cameraFront.x = cos(glm::radians(cameraYaw)) * cos(glm::radians(cameraPitch));
-    cameraFront.y = sin(glm::radians(cameraPitch));
-    cameraFront.z = sin(glm::radians(cameraYaw)) * cos(glm::radians(cameraPitch));
-    cameraFront = glm::normalize(cameraFront);
+    orbitMouseHandle(3, cameraFront, cameraPos, cameraYaw, cameraPitch);    
     
-
+    cameraDirection = glm::normalize(cameraPos-cameraFront);
+    cameraRight = glm::normalize(glm::cross(cameraDirection,upVec));
+    cameraUp = glm::normalize(glm::cross(cameraDirection, cameraFront));
 }
+
 
 void userInput(GLFWwindow* window){
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, true); //close window if esc is pressed NOTE: the getKey func can also return GLFW_RELEASE
@@ -71,20 +67,6 @@ void userInput(GLFWwindow* window){
     if(glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 }
-// const char* vertexShaderSource = "#version 460 core\n" // Apparently this is the simple/beginner way to write stuff in GLSL. It has to be compiled at runtime
-//     "layout (location = 0) in vec3 aPos;\n"
-//     "void main(){\n"
-//     "gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);}\0";
-
-// const char* fragShaderSource = "#version 460 core\n"
-// "out vec4 FragColor;\n"
-// "void main()\n"
-// "{FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);}\0";
-
-// const char* fragShaderSource1 = "#version 460 core\n"
-// "out vec4 FragColor;\n"
-// "void main()\n"
-// "{FragColor = vec4(0.0f, 0.5f, 1.f, 1.0f);}\0";
 
 int main() {
 
@@ -108,8 +90,8 @@ int main() {
   
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback); // Using function above to tell window what to do when resized. GLFW calls whatever function passed with shown arguments in that order
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     glfwSetCursorPosCallback(window, mouse_callback);
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     
     glClearColor(0.808f, .09f, 0.7f, 1.0f); // Sets color to clear the screen to when necessary. This produces a nice red, it is unclear what the last number does
 
@@ -219,21 +201,8 @@ int main() {
     glm::mat4 projection = glm::mat4(1.f);
     projection = glm::perspective(glm::radians(45.f), 800.f/600.f, 0.1f, 100.f );
 
-    // int modelLocation = glGetUniformLocation(shader1.ID, "model");
-    // glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
-
-    // int viewLocation = glGetUniformLocation(shader1.ID, "view");
-    // glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
-
-    // int projectionLocation = glGetUniformLocation(shader1.ID, "projection");
-    // glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
-
-
-    
-
-    
-
-
+    glm::mat4 view;
+ 
     //Deltatime handling
     float deltaTime = 0.0;
     float lastFrame = 0.0;
@@ -244,8 +213,9 @@ int main() {
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        view = glm::lookAt(cameraPos, cameraTarget+cameraFront, upVec);
+        view = glm::lookAt(cameraPos, cameraPos+cameraFront, upVec);
         
+        // shader1.
 
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
         userInput(window);
@@ -260,7 +230,7 @@ int main() {
         glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
 
         int viewLocation = glGetUniformLocation(shader1.ID, "view");
-        glUniformMatrix4fv(viewLocation, 1, GL_FALSE, glm::value_ptr(view));
+        glUniformMatrix4fv(viewLocation, 1, GL_FALSE,glm::value_ptr(view));
 
         int projectionLocation = glGetUniformLocation(shader1.ID, "projection");
         glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
