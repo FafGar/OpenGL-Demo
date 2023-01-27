@@ -9,6 +9,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+
+//TODO: figure out to hot handle texture coordinates conditionally. Easy way would just be to have another vertexes array with texture coordinates added in.
+
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height){ //NOTE: the fact that the ints are passed by value instead of reference is evidently important.
     glViewport(0,0, width, height); //setting window size for OpenGL. This is for coordinate reasons mostly. Note: can be set small than actual window if you want to have other things outside the OpenGL render viewport
 }
@@ -154,6 +158,28 @@ int main() {
 
     unsigned int VBO;
     glGenBuffers(1, &VBO); //an OpenGl object is created, the ID of which is assigned to VBO. The first number is # of ids to generate, so the second arg could/should be an array in other circumstances.
+
+
+    
+    //texture handling
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);  
+
+    int width, height, nrChannels;
+    unsigned char *textureData = stbi_load("../textures/blacksmith.png", &width, &height, &nrChannels,0);
+
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB,GL_UNSIGNED_BYTE, textureData);
+    glGenerateMipmap(GL_TEXTURE_2D);
+
+    stbi_image_free(textureData);
+
 
 
     shader shader1("../shaders/genericVert.glsl", "../shaders/genericFrag.glsl");
