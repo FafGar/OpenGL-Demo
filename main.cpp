@@ -9,6 +9,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
+
+//TODO: figure out to hot handle texture coordinates conditionally. Easy way would just be to have another vertexes array with texture coordinates added in.
+
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height){ //NOTE: the fact that the ints are passed by value instead of reference is evidently important.
     glViewport(0,0, width, height); //setting window size for OpenGL. This is for coordinate reasons mostly. Note: can be set small than actual window if you want to have other things outside the OpenGL render viewport
 }
@@ -60,13 +64,17 @@ void mouse_callback(GLFWwindow* window, double xPos, double yPos){
 }
 
 
+
+bool textureShow = false;
 void userInput(GLFWwindow* window){
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, true); //close window if esc is pressed NOTE: the getKey func can also return GLFW_RELEASE
-    if(glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) glClear(GL_COLOR_BUFFER_BIT); // clear window to color if "C" is pressed
+    // if(glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) glClear(GL_COLOR_BUFFER_BIT); // clear window to color if "C" is pressed
     if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);//controlling if things are rendered wireframe or not
     if(glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
+    if(glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS) {textureShow = true;}
+    if(glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {textureShow = false;}
 }
+
 
 int main() {
 
@@ -140,6 +148,50 @@ int main() {
         -0.5f,  0.5f, -0.5f,
     };
 
+    float texVertices[] = {
+        -0.5f, -0.5f, -0.5f,  0.f, 0.f,
+        0.5f, -0.5f, -0.5f,   0.f,1.f,
+        0.5f,  0.5f, -0.5f,     1.f,1.f,
+        0.5f,  0.5f, -0.5f,     1.f,1.f,
+        -0.5f,  0.5f, -0.5f,    1.f,0.f,
+        -0.5f, -0.5f, -0.5f,  0.f, 0.f,
+
+        -0.5f, -0.5f,  0.5f, 0.f, 0.f,
+        0.5f, -0.5f,  0.5f, 0.f,1.f,
+        0.5f,  0.5f,  0.5f, 1.f,1.f,
+        0.5f,  0.5f,  0.5f,  1.f,1.f,
+        -0.5f,  0.5f,  0.5f,   1.f,0.f,
+        -0.5f, -0.5f,  0.5f,  0.f, 0.f,
+
+        -0.5f,  0.5f,  0.5f,  0.f, 0.f,
+        -0.5f,  0.5f, -0.5f,  0.f,1.f,
+        -0.5f, -0.5f, -0.5f, 1.f,1.f,
+        -0.5f, -0.5f, -0.5f, 1.f,1.f,
+        -0.5f, -0.5f,  0.5f,  1.f,0.f,
+        -0.5f,  0.5f,  0.5f, 0.f, 0.f,
+
+        0.5f,  0.5f,  0.5f, 0.f, 0.f,
+        0.5f,  0.5f, -0.5f, 0.f,1.f,
+        0.5f, -0.5f, -0.5f, 1.f,1.f,
+        0.5f, -0.5f, -0.5f, 1.f,1.f,
+        0.5f, -0.5f,  0.5f, 1.f,0.f,
+        0.5f,  0.5f,  0.5f,  0.f, 0.f,
+
+        -0.5f, -0.5f, -0.5f, 0.f, 0.f,
+        0.5f, -0.5f, -0.5f, 0.f,1.f,
+        0.5f, -0.5f,  0.5f,  1.f,1.f,
+        0.5f, -0.5f,  0.5f,  1.f,1.f,
+        -0.5f, -0.5f,  0.5f, 1.f,0.f,
+        -0.5f, -0.5f, -0.5f, 0.f, 0.f,
+
+        -0.5f,  0.5f, -0.5f, 0.f, 0.f,
+        0.5f,  0.5f, -0.5f, 0.f,1.f,
+        0.5f,  0.5f,  0.5f,  1.f,1.f,
+        0.5f,  0.5f,  0.5f,  1.f,1.f,
+        -0.5f,  0.5f,  0.5f, 1.f,0.f,
+        -0.5f,  0.5f, -0.5f, 0.f, 0.f
+    };
+
     unsigned int indices[] = { //orders of indices of vertexes (That makes sense, right?) to draw in order to form a rectangle without excess vertex definitions
         0, 1, 3,   // first triangle
         1, 2, 3    // second triangle
@@ -154,9 +206,16 @@ int main() {
 
     unsigned int VBO;
     glGenBuffers(1, &VBO); //an OpenGl object is created, the ID of which is assigned to VBO. The first number is # of ids to generate, so the second arg could/should be an array in other circumstances.
+    unsigned int VBO1;
+    glGenBuffers(1, &VBO1);
+
+    
+
+
 
 
     shader shader1("../shaders/genericVert.glsl", "../shaders/genericFrag.glsl");
+    shader shader2("../shaders/textureVert.glsl", "../shaders/textureFrag.glsl");
     // shader shader2("shaders/genericVert.glsl", "shaders/genericFrag2.glsl");
     
     unsigned int VAO;
@@ -182,13 +241,46 @@ int main() {
     unsigned int VAO1;
     glGenVertexArrays(1, &VAO1);
 
-    glBindVertexArray(VAO1);
-    
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO1);
-    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices2), indices2, GL_STATIC_DRAW);
+    glBindVertexArray(VAO1);\
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0); //evidently this and the next line must be specified for each Vertex Array Object.
-    glEnableVertexAttribArray(0); 
+    glBindBuffer(GL_ARRAY_BUFFER, VBO1);
+    
+    glBufferData(GL_ARRAY_BUFFER, sizeof(texVertices), texVertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO1);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0); //evidently this and the next line must be specified for each Vertex Array Object.
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)(3*sizeof(float))); 
+    glEnableVertexAttribArray(1);
+
+    
+    glEnable(GL_TEXTURE_2D);
+    int width, height, nrChannels;
+    unsigned char *textureData = stbi_load("../textures/blacksmith.png", &width, &height, &nrChannels,0);
+
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    //texture handling
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_MIRRORED_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_MIRRORED_REPEAT);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);  
+    
+    if(textureData){
+    
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGB,GL_UNSIGNED_BYTE, textureData);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    }else{
+        cout << "failed to load texture";
+        return -1;
+    }
+
+    stbi_image_free(textureData);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -196,12 +288,14 @@ int main() {
     glm::mat4 model = glm::mat4(1.f);
     model = glm::rotate(model,(float)glfwGetTime()*glm::radians(15.f), glm::vec3(.5f,1.f, 0.f));
 
-    
-
     glm::mat4 projection = glm::mat4(1.f);
     projection = glm::perspective(glm::radians(45.f), 800.f/600.f, 0.1f, 100.f );
 
     glm::mat4 view;
+
+    shader2.use();
+    glUniform1i(glGetUniformLocation(shader2.ID, "inTexture"), 0);
+   
  
     //Deltatime handling
     float deltaTime = 0.0;
@@ -221,28 +315,42 @@ int main() {
         userInput(window);
 
         // glUseProgram(shaderProg);
-        shader1.use();
-        glBindVertexArray(VAO);
+        if(textureShow){
+            shader2.use();
+            glBindVertexArray(VAO1);
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, texture);
 
+            int modelLocation = glGetUniformLocation(shader2.ID, "model");
+            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
 
-        // model = glm::rotate(model,glm::radians(0.5f), glm::vec3(.5f,1.f, 0.f));
-        int modelLocation = glGetUniformLocation(shader1.ID, "model");
-        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
+            int viewLocation = glGetUniformLocation(shader2.ID, "view");
+            glUniformMatrix4fv(viewLocation, 1, GL_FALSE,glm::value_ptr(view));
 
-        int viewLocation = glGetUniformLocation(shader1.ID, "view");
-        glUniformMatrix4fv(viewLocation, 1, GL_FALSE,glm::value_ptr(view));
+            int projectionLocation = glGetUniformLocation(shader2.ID, "projection");
+            glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
 
-        int projectionLocation = glGetUniformLocation(shader1.ID, "projection");
-        glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
+        }else{
+            shader1.use();
+            glBindVertexArray(VAO);
 
-        glDrawArrays(GL_TRIANGLES, 0, 36); // draws triangles based on items in the currently bound element buffer. 
+            int modelLocation = glGetUniformLocation(shader1.ID, "model");
+            glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(model));
+
+            int viewLocation = glGetUniformLocation(shader1.ID, "view");
+            glUniformMatrix4fv(viewLocation, 1, GL_FALSE,glm::value_ptr(view));
+
+            int projectionLocation = glGetUniformLocation(shader1.ID, "projection");
+            glUniformMatrix4fv(projectionLocation, 1, GL_FALSE, glm::value_ptr(projection));
+
+        }
+
+        
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+        // glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+         // draws triangles based on items in the currently bound element buffer. 
         // 1: What to draw      2: how many elements(vertices here)     3: what data type the indices are       4: offset from start of index data
 
-
-        // shader2.use();
-        // glBindVertexArray(VAO1);
-        
-        // glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window); //swaps the color buffer(contains color values for every pixel)
         glfwPollEvents(); // checks for input events, updates window state and can call callback funcs.
