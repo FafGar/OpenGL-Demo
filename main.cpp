@@ -10,7 +10,7 @@
 #include "stb_image.h"
 
 
-//TODO: figure out to hot handle texture coordinates conditionally. Easy way would just be to have another vertexes array with texture coordinates added in.
+//TODO: Make hte camera follow the cube as it moves. Seems to be the result of how the orbit camera is handled. Simplest solution would seem to just be give it a point to orbit around.
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height){ //NOTE: the fact that the ints are passed by value instead of reference is evidently important.
@@ -63,16 +63,23 @@ void mouse_callback(GLFWwindow* window, double xPos, double yPos){
     cameraUp = glm::normalize(glm::cross(cameraDirection, cameraFront));
 }
 
+void moveCube(glm::mat4 &model, float deltatime, glm::mat4 &view){
+    glm::vec3 movement = 5.f*deltatime*cameraFront;
+    model = glm::translate(model, movement);
+    cameraPos += movement;
+    cameraFront += movement;
+}
 
 
 bool textureShow = false;
-void userInput(GLFWwindow* window){
+void userInput(GLFWwindow* window, glm::mat4 &model, float deltatime, glm::mat4 &view){
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, true); //close window if esc is pressed NOTE: the getKey func can also return GLFW_RELEASE
     // if(glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) glClear(GL_COLOR_BUFFER_BIT); // clear window to color if "C" is pressed
     if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);//controlling if things are rendered wireframe or not
     if(glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     if(glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS) {textureShow = true;}
     if(glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {textureShow = false;}
+    if(glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {moveCube(model, deltatime, view);}
 }
 
 
@@ -105,47 +112,47 @@ int main() {
 
 
     float vertices[] = {
-        -0.5f, -0.5f, -0.5f,  
-        0.5f, -0.5f, -0.5f,
-        0.5f,  0.5f, -0.5f, 
-        0.5f,  0.5f, -0.5f, 
-        -0.5f,  0.5f, -0.5f,  
-        -0.5f, -0.5f, -0.5f,
+        -0.5f, -0.5f, -0.5f,    1.f, 1.f, 1.f,
+        0.5f, -0.5f, -0.5f,     1.f, 1.f, 1.f,
+        0.5f,  0.5f, -0.5f,     1.f, 1.f, 1.f,
+        0.5f,  0.5f, -0.5f,     0.f, 0.f, 0.f,
+        -0.5f,  0.5f, -0.5f,    0.f, 0.f, 0.f,
+        -0.5f, -0.5f, -0.5f,    0.f, 0.f, 0.f,
 
-        -0.5f, -0.5f,  0.5f, 
-        0.5f, -0.5f,  0.5f, 
-        0.5f,  0.5f,  0.5f, 
-        0.5f,  0.5f,  0.5f,  
-        -0.5f,  0.5f,  0.5f,  
-        -0.5f, -0.5f,  0.5f,  
+        -0.5f, -0.5f,  0.5f,    0.5f, 0.1f, 0.2f,
+        0.5f, -0.5f,  0.5f,     0.5f, 0.1f, 0.2f,
+        0.5f,  0.5f,  0.5f,     0.5f, 0.1f, 0.2f,
+        0.5f,  0.5f,  0.5f,     0.8f, 0.5f, 0.1f,
+        -0.5f,  0.5f,  0.5f,    0.8f, 0.5f, 0.1f,
+        -0.5f, -0.5f,  0.5f,    0.8f, 0.5f, 0.1f,
 
-        -0.5f,  0.5f,  0.5f,  
-        -0.5f,  0.5f, -0.5f,  
-        -0.5f, -0.5f, -0.5f, 
-        -0.5f, -0.5f, -0.5f, 
-        -0.5f, -0.5f,  0.5f, 
-        -0.5f,  0.5f,  0.5f,
+        -0.5f,  0.5f,  0.5f,    1.f, 0.8f, 0.8f,
+        -0.5f,  0.5f, -0.5f,    1.f, 0.8f, 0.8f,
+        -0.5f, -0.5f, -0.5f,    1.f, 0.8f, 0.8f,
+        -0.5f, -0.5f, -0.5f,    0.2f, 1.f, 0.9f,
+        -0.5f, -0.5f,  0.5f,    0.2f, 1.f, 0.9f,
+        -0.5f,  0.5f,  0.5f,    0.2f, 1.f, 0.9f,
 
-        0.5f,  0.5f,  0.5f,
-        0.5f,  0.5f, -0.5f, 
-        0.5f, -0.5f, -0.5f,
-        0.5f, -0.5f, -0.5f,
-        0.5f, -0.5f,  0.5f,
-        0.5f,  0.5f,  0.5f, 
+        0.5f,  0.5f,  0.5f,     0.6f, 0.3f, 1.f,
+        0.5f,  0.5f, -0.5f,     0.6f, 0.3f, 1.f,
+        0.5f, -0.5f, -0.5f,     0.6f, 0.3f, 1.f,
+        0.5f, -0.5f, -0.5f,     0.5f, 0.2f, 0.7f,
+        0.5f, -0.5f,  0.5f,     0.5f, 0.2f, 0.7f,
+        0.5f,  0.5f,  0.5f,     0.5f, 0.2f, 0.7f,
 
-        -0.5f, -0.5f, -0.5f, 
-        0.5f, -0.5f, -0.5f, 
-        0.5f, -0.5f,  0.5f, 
-        0.5f, -0.5f,  0.5f, 
-        -0.5f, -0.5f,  0.5f,
-        -0.5f, -0.5f, -0.5f, 
+        -0.5f, -0.5f, -0.5f,    0.1f, 0.4f, 0.3f,
+        0.5f, -0.5f, -0.5f,     0.1f, 0.4f, 0.3f,
+        0.5f, -0.5f,  0.5f,     0.1f, 0.4f, 0.3f,
+        0.5f, -0.5f,  0.5f,     0.9f, 0.7f, 0.9f,
+        -0.5f, -0.5f,  0.5f,    0.9f, 0.7f, 0.9f,
+        -0.5f, -0.5f, -0.5f,    0.9f, 0.7f, 0.9f,
 
-        -0.5f,  0.5f, -0.5f,
-        0.5f,  0.5f, -0.5f, 
-        0.5f,  0.5f,  0.5f, 
-        0.5f,  0.5f,  0.5f, 
-        -0.5f,  0.5f,  0.5f,
-        -0.5f,  0.5f, -0.5f,
+        -0.5f,  0.5f, -0.5f,    0.1f, 0.8f, 0.5f,
+        0.5f,  0.5f, -0.5f,     0.1f, 0.8f, 0.5f,
+        0.5f,  0.5f,  0.5f,     0.1f, 0.8f, 0.5f,
+        0.5f,  0.5f,  0.5f,     0.9f, 0.4f, 0.2f,
+        -0.5f,  0.5f,  0.5f,    0.9f, 0.4f, 0.2f,
+        -0.5f,  0.5f, -0.5f,    0.9f, 0.4f, 0.2f,
     };
 
     float texVertices[] = {
@@ -192,10 +199,19 @@ int main() {
         -0.5f,  0.5f, -0.5f, 0.f, 0.f
     };
 
-    unsigned int indices[] = { //orders of indices of vertexes (That makes sense, right?) to draw in order to form a rectangle without excess vertex definitions
-        0, 1, 3,   // first triangle
-        1, 2, 3    // second triangle
-    }  ; 
+    float floorVertices[] = {
+        -5.f, -0.51f, -5.f,      1.f, 0.1f, 1.f, 
+        5.f,  -0.51f, -5.f,      0.4f, 0.1f, 0.8f, 
+        5.f, -0.51f, 5.f,        0.4f, 0.1f, 0.8f,
+        5.f, -0.51f, 5.f,        0.4f, 0.1f, 0.8f,
+        -5.f,  -0.51f, 5.f,      0.4f, 0.1f, 0.8f,
+        -5.f,  -0.51f, -5.f,     1.f, 0.1f, 1.f,
+    };
+    
+    // unsigned int indices[] = { //orders of indices of vertexes (That makes sense, right?) to draw in order to form a rectangle without excess vertex definitions
+    //     0, 1, 3,   // first triangle
+    //     1, 2, 3    // second triangle
+    // }  ; 
 
     unsigned int EBO;
     glGenBuffers(1, &EBO); //Creating an Element Buffer object
@@ -209,10 +225,10 @@ int main() {
     unsigned int VBO1;
     glGenBuffers(1, &VBO1);
 
+    unsigned int VBOFloor;
+    glGenBuffers(1, &VBOFloor);
+
     
-
-
-
 
     shader shader1("../shaders/genericVert.glsl", "../shaders/genericFrag.glsl");
     shader shader2("../shaders/textureVert.glsl", "../shaders/textureFrag.glsl");
@@ -229,13 +245,14 @@ int main() {
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW); //
     //           ^data sent to    ^data size (bytes) ^data    ^How GPU handles data; this option means data is sent once and used many times
 
+    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO); // This binding is one of the many things that is saved in a VAO
+    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); 
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO); // This binding is one of the many things that is saved in a VAO
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW); 
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(float), (void*)0); // telling the GPU how to interpret the data we sent to the shaders: position data for each vertex is first in line at index 0, positions are in vec3, the individual values are in
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)0); // telling the GPU how to interpret the data we sent to the shaders: position data for each vertex is first in line at index 0, positions are in vec3, the individual values are in
     //floats, the values need not be normalized in this case, the width of each vertex's data is just 3 floats, and the last one is the offset from the beginning where the position data starts in the buffer.
     glEnableVertexAttribArray(0);// Enables the 0 indexed attribute of a vertex. In this case, position.
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float))); 
+    glEnableVertexAttribArray(1);
 
 
     unsigned int VAO1;
@@ -247,8 +264,8 @@ int main() {
     
     glBufferData(GL_ARRAY_BUFFER, sizeof(texVertices), texVertices, GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO1);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO1);
+    // glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5*sizeof(float), (void*)0); //evidently this and the next line must be specified for each Vertex Array Object.
     glEnableVertexAttribArray(0);
@@ -272,7 +289,6 @@ int main() {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);  
     
     if(textureData){
-    
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGB,GL_UNSIGNED_BYTE, textureData);
     glGenerateMipmap(GL_TEXTURE_2D);
     }else{
@@ -285,8 +301,27 @@ int main() {
     glEnable(GL_DEPTH_TEST);
 
 
+
+    unsigned int VAOFloor;
+    glGenVertexArrays(1,&VAOFloor);// creating a Vertex Array Object the same way we created the Vertex Buffer Object.
+    // The VAO really just serves as a way to save and reload all of the vertex array settings we established above. This is an example of OpenGL being a state machine
+
+    glBindVertexArray(VAOFloor); //Set state so that settings are usable later.                  // This could be called again in render loop to switch vertex array setting states
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBOFloor); //binds the buffer VBO points at to being the array/vertex buffer target.
+
+    glBufferData(GL_ARRAY_BUFFER, sizeof(floorVertices), floorVertices, GL_STATIC_DRAW); //
+    //           ^data sent to    ^data size (bytes)        ^data        ^How GPU handles data; this option means data is sent once and used many times
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)0); // telling the GPU how to interpret the data we sent to the shaders: position data for each vertex is first in line at index 0, positions are in vec3, the individual values are in
+    //floats, the values need not be normalized in this case, the width of each vertex's data is just 3 floats, and the last one is the offset from the beginning where the position data starts in the buffer.
+    glEnableVertexAttribArray(0);// Enables the 0 indexed attribute of a vertex. In this case, position.
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6*sizeof(float), (void*)(3*sizeof(float))); 
+    glEnableVertexAttribArray(1);
+
+
     glm::mat4 model = glm::mat4(1.f);
-    model = glm::rotate(model,(float)glfwGetTime()*glm::radians(15.f), glm::vec3(.5f,1.f, 0.f));
+    // model = glm::rotate(model,(float)glfwGetTime()*glm::radians(15.f), glm::vec3(.5f,1.f, 0.f));
 
     glm::mat4 projection = glm::mat4(1.f);
     projection = glm::perspective(glm::radians(45.f), 800.f/600.f, 0.1f, 100.f );
@@ -312,7 +347,7 @@ int main() {
         // shader1.
 
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-        userInput(window);
+        userInput(window, model, deltaTime, view);
 
         // glUseProgram(shaderProg);
         if(textureShow){
@@ -350,6 +385,12 @@ int main() {
         // glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
          // draws triangles based on items in the currently bound element buffer. 
         // 1: What to draw      2: how many elements(vertices here)     3: what data type the indices are       4: offset from start of index data
+
+        shader1.use();
+        glBindVertexArray(VAOFloor);
+        int modelLocation = glGetUniformLocation(shader1.ID, "model");
+        glUniformMatrix4fv(modelLocation, 1, GL_FALSE, glm::value_ptr(glm::mat4(1.f)));
+        glDrawArrays(GL_TRIANGLES, 0, 6);
 
 
         glfwSwapBuffers(window); //swaps the color buffer(contains color values for every pixel)
