@@ -11,14 +11,16 @@
 
 
 //TODO: Make hte camera follow the cube as it moves. Seems to be the result of how the orbit camera is handled. Simplest solution would seem to just be give it a point to orbit around.
+// update aFTER A COUPLE HOURS. still trying to give it a point to orbit around.
 
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height){ //NOTE: the fact that the ints are passed by value instead of reference is evidently important.
     glViewport(0,0, width, height); //setting window size for OpenGL. This is for coordinate reasons mostly. Note: can be set small than actual window if you want to have other things outside the OpenGL render viewport
 }
 
+glm::vec3 cubePos = glm::vec3(0.f,0.f,0.f);
+
 glm::vec3 cameraPos = glm::vec3(0.f,0.f,-3.f); //camera starting location
-glm::vec3 cameraFront = glm::vec3(0.f,0.f,1.f); //camera starts pointing here
 glm::vec3 upVec = glm::vec3(0.f, 1.f, 0.f); // world space up vector
 
 glm::vec3 cameraDirection;// positive z axis for the camera
@@ -56,30 +58,51 @@ void mouse_callback(GLFWwindow* window, double xPos, double yPos){
     if(cameraPitch < -89.0f)
         cameraPitch = -89.0f;
 
-    orbitMouseHandle(3, cameraFront, cameraPos, cameraYaw, cameraPitch);    
+    orbitMouseHandle(3, cameraPos, cameraYaw,  cameraPitch, cubePos);    
     
-    cameraDirection = glm::normalize(cameraPos-cameraFront);
+    cameraDirection = glm::normalize(cubePos-cameraPos);
     cameraRight = glm::normalize(glm::cross(cameraDirection,upVec));
-    cameraUp = glm::normalize(glm::cross(cameraDirection, cameraFront));
+    cameraUp = glm::normalize(glm::cross(cameraDirection, cubePos-cameraPos));
 }
 
-void moveCube(glm::mat4 &model, float deltatime, glm::mat4 &view){
-    glm::vec3 movement = 5.f*deltatime*cameraFront;
+void moveCube(glm::mat4 &model, float deltatime, glm::mat4 &view, glm::vec3 &followPos){
+    glm::vec3 movement = 5.f*deltatime*cameraDirection;
+    movement = glm::vec3(movement.x, 0, movement.z);
     model = glm::translate(model, movement);
+    followPos+=movement;
     cameraPos += movement;
-    cameraFront += movement;
+    cout << "MOVE" << endl;
+
+    if (followPos.x > 4.5f){
+        model = glm::translate(model, -glm::vec3(movement.x,0,0));
+        followPos.x-=movement.x;
+        cameraPos.x -= movement.x;
+    } else if (followPos.x < -4.5f){
+        model = glm::translate(model, -glm::vec3(movement.x,0,0));
+        followPos.x-=movement.x;
+        cameraPos.x -= movement.x;
+    }
+    if (followPos.z > 4.5f){
+        model = glm::translate(model, -glm::vec3(0,0,movement.z));
+        followPos.z-=movement.z;
+        cameraPos.z -= movement.z;
+    } else if (followPos.z < -4.5f){
+        model = glm::translate(model, -glm::vec3(0,0,movement.z));
+        followPos.z-=movement.z;
+        cameraPos.z -= movement.z;
+    }
 }
 
 
 bool textureShow = false;
-void userInput(GLFWwindow* window, glm::mat4 &model, float deltatime, glm::mat4 &view){
+void userInput(GLFWwindow* window, glm::mat4 &model, float deltatime, glm::mat4 &view, glm::vec3& cubePos){
     if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) glfwSetWindowShouldClose(window, true); //close window if esc is pressed NOTE: the getKey func can also return GLFW_RELEASE
     // if(glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) glClear(GL_COLOR_BUFFER_BIT); // clear window to color if "C" is pressed
     if(glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);//controlling if things are rendered wireframe or not
     if(glfwGetKey(window, GLFW_KEY_F) == GLFW_PRESS) glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     if(glfwGetKey(window, GLFW_KEY_T) == GLFW_PRESS) {textureShow = true;}
     if(glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {textureShow = false;}
-    if(glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {moveCube(model, deltatime, view);}
+    if(glfwGetKey(window, GLFW_KEY_M) == GLFW_PRESS) {moveCube(model, deltatime, view, cubePos);}
 }
 
 
@@ -90,7 +113,7 @@ int main() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);  //Tell GLFW to work with OpenGL version x.6
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); //Tell GLFW to work with openGL Core instead of the other one with unnecessary backwards compatibility things
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Test Window", NULL, NULL);//Create window. In real application might want to check that pointer is not NULL before continuing
+    GLFWwindow* window = glfwCreateWindow(1800, 900, "Test Window", NULL, NULL);//Create window. In real application might want to check that pointer is not NULL before continuing
 
     glfwMakeContextCurrent(window); // makes "window" the main context of the current thread. My guess is that this will have to do with buffers/updating the frame later.
     
@@ -108,7 +131,7 @@ int main() {
     glfwSetCursorPosCallback(window, mouse_callback);
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
     
-    glClearColor(0.808f, .09f, 0.7f, 1.0f); // Sets color to clear the screen to when necessary. This produces a nice red, it is unclear what the last number does
+    glClearColor(0.5f, .5f, 0.5f, 1.0f); // Sets color to clear the screen to when necessary. This produces a nice red, it is unclear what the last number does
 
 
     float vertices[] = {
@@ -200,12 +223,12 @@ int main() {
     };
 
     float floorVertices[] = {
-        -5.f, -0.51f, -5.f,      1.f, 0.1f, 1.f, 
-        5.f,  -0.51f, -5.f,      0.4f, 0.1f, 0.8f, 
-        5.f, -0.51f, 5.f,        0.4f, 0.1f, 0.8f,
-        5.f, -0.51f, 5.f,        0.4f, 0.1f, 0.8f,
-        -5.f,  -0.51f, 5.f,      0.4f, 0.1f, 0.8f,
-        -5.f,  -0.51f, -5.f,     1.f, 0.1f, 1.f,
+        -5.f, -0.51f, -5.f,      1.f, 0.f, 0.f, 
+        5.f,  -0.51f, -5.f,      0.f, 0.f, 0.8f, 
+        5.f, -0.51f, 5.f,        0.f, 0.f, 0.8f,
+        5.f, -0.51f, 5.f,        0.f, 0.f, 0.8f,
+        -5.f,  -0.51f, 5.f,      0.f, 0.f, 0.8f,
+        -5.f,  -0.51f, -5.f,     1.f, 0.f, 0.f,
     };
     
     // unsigned int indices[] = { //orders of indices of vertexes (That makes sense, right?) to draw in order to form a rectangle without excess vertex definitions
@@ -324,7 +347,7 @@ int main() {
     // model = glm::rotate(model,(float)glfwGetTime()*glm::radians(15.f), glm::vec3(.5f,1.f, 0.f));
 
     glm::mat4 projection = glm::mat4(1.f);
-    projection = glm::perspective(glm::radians(45.f), 800.f/600.f, 0.1f, 100.f );
+    projection = glm::perspective(glm::radians(45.f), 1800.f/900.f, 0.1f, 100.f );
 
     glm::mat4 view;
 
@@ -337,17 +360,19 @@ int main() {
     float lastFrame = 0.0;
     float currentFrame;
 
+    
+
     while(!glfwWindowShouldClose(window)){ //render loop        The function just checks if the window has been told to close or not
         currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
 
-        view = glm::lookAt(cameraPos, cameraPos+cameraFront, upVec);
+        view = glm::lookAt(cameraPos, cubePos, upVec);
         
         // shader1.
 
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
-        userInput(window, model, deltaTime, view);
+        userInput(window, model, deltaTime, view, cubePos);
 
         // glUseProgram(shaderProg);
         if(textureShow){
