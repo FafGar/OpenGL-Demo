@@ -1,3 +1,12 @@
+/*
+Author: Asher Dykstra
+
+WARNING TO ALL THOSE WHO ENTER THIS FILE: IT'S A MESS AND I HAVE NOT HAD THE OPPORTUNITY TO CLEAN IT UP AS OF YET.
+
+
+*/
+
+
 #include <iostream>
 #include <glad/glad.h>
 #include <glfw3.h>
